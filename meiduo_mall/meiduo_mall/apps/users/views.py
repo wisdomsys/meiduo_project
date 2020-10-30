@@ -1,12 +1,39 @@
-from django.shortcuts import render
+from django.contrib.auth import login
+from django.shortcuts import render, redirect
+from django.urls import reverse
 from django.views import View
 from django import http
 import re
 from users.models import User
 from django.db import DatabaseError
+from meiduo_mall.utils.response_code import RETCODE
 
 
 # Create your views here.
+class UsernameCountView(View):
+    # 判断用户名是否重复注册
+    def get(self, request, username):
+        # 接收和校验参数
+
+        # 实现主体业务逻辑：使用username查询对应的记录的条数
+        # filter返回的是满足条件的结果集
+        count = User.objects.filter(username=username).count()
+        return http.JsonResponse({
+            'code': RETCODE.OK,
+            'errmsg': 'ok',
+            'count': count,
+        })
+        # 响应结果
+
+
+class MobileCountView(View):
+    def get(self, request, mobile):
+        count = User.objects.filter(mobile=mobile).count()
+        return http.JsonResponse({
+            'code': RETCODE.OK,
+            'errmsg': 'ok',
+            'count': count,
+        })
 
 
 class RegisterView(View):
@@ -44,12 +71,17 @@ class RegisterView(View):
             return http.HttpResponseForbidden('请勾选用户协议')
 
         # 保存注册数据,是注册的核心
+        # return render(request, 'register.html', {'register_error': '注册失败'})
         try:
-            User.objects.create_user(username=username, password=password, mobile=mobile)
+            user = User.objects.create_user(username=username, password=password, mobile=mobile)
         except DatabaseError:
-            return render(request, 'register.html', {
-                'register_error': '注册失败'
-            })
+            return render(request, 'register.html', {'register_error': '注册失败'})
+        # 实现状态保持
+        login(request, user)
 
         # 响应结果:重定向到首页
-        return http.HttpResponse('注册成功，重定向到首页')
+        # return redirect('/') 如果改掉地址，会导致访问失败
+        # return redirect(reverse('命名空间'))
+        # return redirect(reverse('总路由的namespace:子路由的name'))
+        # reverse('contents:index') == '/'
+        return redirect(reverse('contents:index'))

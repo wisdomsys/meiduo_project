@@ -3,12 +3,12 @@ var vm = new Vue({
     // 修改Vue变量的读取语法，避免和django模板语法冲突
     delimiters: ['[[', ']]'],
     data: {
-        host,
+        // host,
         username: sessionStorage.username || localStorage.username,
         user_id: sessionStorage.user_id || localStorage.user_id,
         token: sessionStorage.token || localStorage.token,
         cart_total_count: 0, // 购物车总数量
-        cart: [], // 购物车数据,
+        carts: [], // 购物车数据,
         f1_tab: 1, // 1F 标签页控制
         f2_tab: 1, // 2F 标签页控制
         f3_tab: 1, // 3F 标签页控制

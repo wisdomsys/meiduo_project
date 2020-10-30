@@ -46,6 +46,9 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     # 用户模块  'meiduo_mall.apps.users',
     'users',
+    # 首页
+    'contents',
+    'verifications',
 
 ]
 
@@ -141,7 +144,7 @@ CACHES = {
         }
     },
     "verify_code": {
-        # session
+        # verify_code
         "BACKEND": "django_redis.cache.RedisCache",
         "LOCATION": "redis://127.0.0.1:6379/2",
         "OPTIONS": {

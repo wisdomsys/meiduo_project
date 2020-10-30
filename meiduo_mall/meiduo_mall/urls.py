@@ -19,6 +19,13 @@ from django.conf.urls import url, include
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+
+    # users
     url(r'^', include(('users.urls', "users"), namespace='users')),
-    # url(r'^', include('users.urls','users'))
+
+    # contents
+    url(r'^', include(('contents.urls', "contents"), namespace='contents')),
+
+    # verifications
+    url(r'^', include('verifications.urls')),
 ]

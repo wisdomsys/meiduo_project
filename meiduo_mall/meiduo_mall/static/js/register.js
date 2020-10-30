@@ -3,31 +3,50 @@
 let vm = new Vue({
     el:'#app',  //
     delimiters:['[[',']]'],
-    data:{// 数据对象
+    data: {// 数据对象
         //v-model
-        username:'',
-        password:'',
-        password2:'',
-        mobile:'',
-        image_code:'',
-        sms_code:'',
-        allow:'',
+        username: '',
+        password: '',
+        password2: '',
+        mobile: '',
+        image_code: '',
+        image_code_url: '',
+        sms_code: '',
+        allow: '',
+        uuid: '',
 
         // v-show
-        error_name : false,
-        error_password:false,
-        error_password2:false,
+        error_name: false,
+        error_password: false,
+        error_password2: false,
         error_mobile: false,
-        error_image_code:false,
-        error_sms_code:false,
-        error_allow:false,
+        error_image_code: false,
+        error_sms_code: false,
+        error_allow: false,
 
         // error_massage
-        error_name_message:'',
-        error_mobile_message:'',
+        error_name_message: '',
+        error_mobile_message: '',
+    },
 
+    // mounted(){ //页面加载完会被调用的
+    //     // 生成图形验证码
+    //     //     this.uuid = generateUUID();
+    //     //     this.image_code_url = '/image_codes/'+this.uuid+'/';
+    //     //     alert(this.image_code_url)
+    //     this.generate_image_code();
+    // },
+    mounted(){
+        this.uuid = generateUUID();
+        this.image_code_url = '/image_codes/'+this.uuid+'/';
+        // this.generate_image_code();
     },
     methods:{// 定义和实现事件方法
+        //生成图形验证码的方法:封装的思想、代码的复用
+        generate_image_code(){
+            this.uuid = generateUUID();
+            this.image_code_url = '/image_codes/'+this.uuid+'/';
+        },
         // 校验用户名
         check_username(){
             // 用户名5-20个字符[a-zA-Z0-9_-]
@@ -37,8 +56,37 @@ let vm = new Vue({
                 this.erroe_name = false;
             }else {
                 //匹配失败，展示错误信息
-                this.error_name_message = '请输入5-20个字符的用户名'
+                this.error_name_message = '请输入5-20个字符的用户名';
                 this.error_name = true;
+            }
+            // 判断注册的用户名是否重复
+            // axios.get('url','请求头')
+                // .then(function (response) {
+                    //
+                    // })
+                    // .catch(function (error) {
+                    //
+                    // })
+            if (this.erroe_name==false){
+                // 只有当用户输入的用户名满足条件时，才会发送请求
+                // es6语法
+                let url = '/username/'+this.username+'/count/';
+                axios.get(url,{
+                    responseType:'json'
+                })
+                    .then(response=>{
+                        if (response.data.count==1){
+                            // 用户名已存在
+                            this.error_name_message='用户名已存在'
+                            this.error_name=true
+                        }else{
+                            // 用户名不存在
+                            this.error_name = false
+                        }
+                    })
+                    .catch(error=>{
+                        console.log(error.response)
+                    })
             }
         },
         // 校验密码
@@ -64,11 +112,28 @@ let vm = new Vue({
             if (re.test(this.mobile)){
                 this.error_mobile = false
             }else {
-                this.error_mobile_message = '请输入正确的手机号'
+                this.error_mobile_message = '请输入正确的手机号';
                 this.error_mobile = true
             }
+            if (this.error_mobile==false){
+                let url = '/mobile/'+this.mobile+'/count/';
+                axios.get(url,{
+                    responseType: 'json'
+                })
+                    .then(response=>{
+                        if (response.data.count==1){
+                            // 手机号已经存在
+                            this.error_mobile_message = '手机号已存在';
+                            this.error_mobile=true
+                        }else{
+                            this.error_mobile=false
+                        }
+                    })
+                    .catch(error=>{
+                        console.log(error.response)
+                    })
+            }
         },
-        check_image_code(){},
         check_sms_code(){},
         check_allow(){
             if (!this.allow){
@@ -86,8 +151,8 @@ let vm = new Vue({
             this.check_allow();
             if (this.erroe_name == true || this.error_password == true||this.error_password2==true||this.error_allow==true||this.error_mobile==true){
                 // window.event.returnValue =false;
-                window.event.preventDefault();
-                // return false
+                // window.event.preventDefault();
+                return false
             }
 
         },
