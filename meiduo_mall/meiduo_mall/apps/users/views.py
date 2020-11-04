@@ -1,4 +1,4 @@
-from django.contrib.auth import login
+from django.contrib.auth import login, authenticate
 from django.shortcuts import render, redirect
 from django.urls import reverse
 from django.views import View
@@ -8,6 +8,51 @@ from users.models import User
 from django.db import DatabaseError
 from meiduo_mall.utils.response_code import RETCODE
 from django_redis import get_redis_connection
+
+
+class LoginView(View):
+    def get(self, request):
+        # 提供用户登录页面
+        return render(request, 'login.html')
+
+    def post(self, request):
+        # 实现用户登录逻辑
+        # 接收参数
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+        remember = request.POST.get('remember')
+        # 校验参数
+        if not all([username, password]):
+            return http.HttpResponseForbidden('缺少必要参数')
+
+        # 判断用户名是否是5-20个字符
+        if not re.match(r'^[a-zA-Z0-9_-]{5,20}$', username):
+            return http.HttpResponseForbidden('请输入正确的用户名和手机号')
+
+        # 判断密码是否是8-20个字符
+        if not re.match(r'^[0-9a-zA-Z]{8,20}$', password):
+            return http.HttpResponseForbidden('登录密码最少8位，最长20位')
+
+        # 认证用户，使用账号查询用户是否存在，如果用户存在再去校验密码是否正确
+        # User.objects.get(username=username)
+        # User.check_password(password)
+        user = authenticate(username=username, password=password)
+        if user is None:
+            # return '错误提示信息 json html 403'  403只用于校验参数，前端校验过的 后端校验仍旧错误，登录用表单提交所以不用json
+            return render(request, 'login.html', {'account_errmsg': '账号或密码错误'})
+
+        # 状态保持
+        login(request, user)
+        # 使用remember确定状态保持周期，实现记住登录，记住用户
+        if remember != 'on':
+            # 没有记住登录：状态保持在浏览器会话结束后就销毁
+            request.session.set_expiry(0)
+        else:
+            # 记住登录：状态保持周期为2周,默认是2周 传None，3600s 单位是s
+            request.session.set_expiry(None)
+
+        # 响应结果
+        return redirect(reverse('contents:index'))
 
 
 # Create your views here.
@@ -64,7 +109,7 @@ class RegisterView(View):
         if not re.match(r'^[a-zA-Z0-9_-]{5,20}$', username):
             return http.HttpResponseForbidden('请输入5-20个字符的用户名')
         if not re.match(r'^[0-9A-Za-z]{8,20}$', password):
-            return http.HttpResponseForbidden('密码最少8位，最长20位')
+            return http.HttpResponseForbidden('注册密码最少8位，最长20位')
         if password != password2:
             return http.HttpResponseForbidden('两次输入的密码不一致')
         if not re.match(r'^1[3-9]\d{9}$', mobile):
