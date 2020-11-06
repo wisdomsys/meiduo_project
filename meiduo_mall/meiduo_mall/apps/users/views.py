@@ -14,10 +14,33 @@ from django_redis import get_redis_connection
 from django.contrib.auth.mixins import LoginRequiredMixin
 from meiduo_mall.utils.views import LoginRequiredJSONMixin
 from celery_tasks.email.tasks import send_verify_email
-from users.utils import generate_verify_email_url
+from users.utils import generate_verify_email_url, check_verify_email_token
 
 # 创建日志输出器
 logger = logging.getLogger('django')
+
+
+class VerifyEmailView(View):
+    # 验证邮箱
+    def get(self, request):
+        # 接收参数
+        token = request.GET.get('token')
+        # 校验参数
+        if not token:
+            return http.HttpResponseForbidden('缺少token')
+        # 从token中提取用户的信息 user_id ==> user
+        user = check_verify_email_token(token)
+        if not user:
+            return http.HttpResponseBadRequest('无效的token')
+        # 将用户的email_active字段设置为true
+        try:
+            user.email_active = True
+            user.save()
+        except Exception as e:
+            logger.error(e)
+            return http.HttpResponseServerError('激活邮件失败')
+        # 响应结果  重定向到用户中心
+        return redirect('users:info')
 
 
 class EmailView(LoginRequiredJSONMixin, View):
