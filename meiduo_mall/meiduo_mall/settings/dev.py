@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     # 首页
     'contents',
     'verifications',
+    'oauth',
 
 ]
 
@@ -251,3 +252,27 @@ AUTH_USER_MODEL = 'users.User'
 
 # 指定自定义用户认证的后端
 AUTHENTICATION_BACKENDS = ['users.utils.UsernameMobileBackend']
+
+# 判断用户是否登录后，指定未登录用户重定向的地址
+LOGIN_URL = '/login/'
+
+# QQ登录的配置参数
+
+QQ_CLIENT_ID = '101911391'
+QQ_CLIENT_SECRET = 'ecbf9a1edabae228f29d95e9c5da4d7c'
+QQ_REDIRECT_URL = 'http://www.meiduo.site:8000/oauth_callback'
+
+# 邮件参数
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.163.com'  # 发送邮件的邮箱 的 SMTP服务器，这里用了163邮箱
+EMAIL_PORT = 25  # 发件箱的SMTP服务器端口
+EMAIL_HOST_USER = 'joseph_beer@163.com'  # 发送邮件的邮箱地址
+EMAIL_HOST_PASSWORD = 'FWFQVRREPVJUWDVH'  # 发送邮件的邮箱密码(这里使用的是授权码)
+# EMAIL_USE_TLS = False   #是否使用TLS安全传输协议(用于在两个通信应用程序之间提供保密性和数据完整性。)
+# EMAIL_USE_SSL = True    #是否使用SSL加密，qq企业邮箱要求使用
+EMAIL_FROM = 'test<joseph_beer@163.com>'  # 发件人抬头
+
+
+# 邮箱验证链接
+
+EMAIL_VERIFY_URL = 'http://127.0.0.1:8000/emails/verification'

@@ -1,4 +1,7 @@
-from django.contrib.auth import login, authenticate
+import json
+import logging
+
+from django.contrib.auth import login, authenticate, logout
 from django.shortcuts import render, redirect
 from django.urls import reverse
 from django.views import View
@@ -8,6 +11,71 @@ from users.models import User
 from django.db import DatabaseError
 from meiduo_mall.utils.response_code import RETCODE
 from django_redis import get_redis_connection
+from django.contrib.auth.mixins import LoginRequiredMixin
+from meiduo_mall.utils.views import LoginRequiredJSONMixin
+from celery_tasks.email.tasks import send_verify_email
+from users.utils import generate_verify_email_url
+
+# 创建日志输出器
+logger = logging.getLogger('django')
+
+
+class EmailView(LoginRequiredJSONMixin, View):
+    # 添加邮箱
+    def put(self, request):
+        # 将用户传入的邮箱保存到数据库的email字段中
+        # 接收参数
+        json_str = request.body.decode()  # body类型是bytes
+        json_dict = json.loads(json_str)  # 将json格式数据转换为字典（可以这么理解，json.loads()函数是将字符串转化为字典）
+        email = json_dict.get('email')
+        # 校验参数
+        if not re.match(r'^[a-z0-9][\w\.\-]*@[a-z0-9\-]+(\.[a-z]{2,5}){1,2}$', email):
+            return http.HttpResponseForbidden('参数email有误')
+        try:
+            request.user.email = email
+            request.user.save()
+        except Exception as e:
+            logger.error(e)
+            return http.JsonResponse({'code': '1', 'errmsg': '添加邮箱失败'})
+        # 发送邮箱验证邮件
+        verify_url = generate_verify_email_url(request.user)
+        # send_verify_email(email, verify_url) 错误的写法
+        send_verify_email.delay(email, verify_url)
+
+        # 响应结果
+        return http.JsonResponse({'code': '0', 'errmsg': 'ok'})
+
+
+class UserInfoView(LoginRequiredMixin, View):
+    def get(self, request):
+        # LoginRequiredMixin  封装了是否登录的操作
+        # 提供用户中心的页面
+        # 判断是否登录
+        # if request.user.is_authenticated:
+        #     return render(request, 'user_info_center.html')
+        # else:
+        #     return redirect(reverse('users:login'))
+        # 如果LoginRequiredMixin判断用户已经登录，那么request.user就是登录用户登录对象
+        content = {
+            'username': request.user.username,
+            'mobile': request.user.mobile,
+            'email': request.user.email,
+            'email_active': request.user.email_active,
+        }
+        return render(request, 'user_info_center.html', content)
+
+
+class LogoutView(View):
+    def get(self, request):
+        # 用户退出登录
+        # 清除状态保持信息
+        logout(request)
+        # 响应结果
+        # 退出登录后重定向到首页
+        response = redirect(reverse('contents:index'))
+        # 清除cookie
+        response.delete_cookie('username')
+        return response
 
 
 class LoginView(View):
@@ -32,7 +100,6 @@ class LoginView(View):
         # 判断密码是否是8-20个字符
         if not re.match(r'^[0-9a-zA-Z]{8,20}$', password):
             return http.HttpResponseForbidden('登录密码最少8位，最长20位')
-
         # 认证用户，使用账号查询用户是否存在，如果用户存在再去校验密码是否正确
         # User.objects.get(username=username)
         # User.check_password(password)
@@ -50,9 +117,19 @@ class LoginView(View):
         else:
             # 记住登录：状态保持周期为2周,默认是2周 传None，3600s 单位是s
             request.session.set_expiry(None)
-
-        # 响应结果
-        return redirect(reverse('contents:index'))
+        # 为了实现在首页的右上角展示用户信息，我们需要将用户名缓存到cookie中
+        # response.set_cookie(key,val,expiry)
+        # 响应结果 ,不是一味地重定向到首页，根据从哪来回哪去
+        # 先取出next
+        next = request.GET.get('next')
+        if next:
+            # 重定向到next
+            response = redirect(next)
+        else:
+            # 重定向到首页
+            response = redirect(reverse('contents:index'))
+        response.set_cookie('username', username, max_age=3600 * 24 * 15)
+        return response
 
 
 # Create your views here.
@@ -60,7 +137,6 @@ class UsernameCountView(View):
     # 判断用户名是否重复注册
     def get(self, request, username):
         # 接收和校验参数
-
         # 实现主体业务逻辑：使用username查询对应的记录的条数
         # filter返回的是满足条件的结果集
         count = User.objects.filter(username=username).count()
@@ -141,4 +217,6 @@ class RegisterView(View):
         # return redirect(reverse('命名空间'))
         # return redirect(reverse('总路由的namespace:子路由的name'))
         # reverse('contents:index') == '/'
-        return redirect(reverse('contents:index'))
+        response = redirect(reverse('contents:index'))
+        response.set_cookie('username', user.username, max_age=3600 * 24 * 15)
+        return response

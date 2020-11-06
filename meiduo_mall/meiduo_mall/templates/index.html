@@ -17,29 +17,48 @@
         <div class="header">
             <div class="welcome fl">欢迎来到美多商城!</div>
             <div class="fr">
-                {% if user.is_authenticated %}
-                    <div class="login_btn fl" v-if="username">
-                    欢迎您：<em>{{ user.username }}</em>
+{#                第一种：使用jinjia2模板引擎#}
+{#                {% if user.is_authenticated %}#}
+{#                    <div class="login_btn fl">#}
+{#                    欢迎您：<em>{{ user.username }}</em>#}
+{#                    <span>|</span>#}
+{#                    <a href="/logout/" class="quit">退出</a>#}
+{#                    </div>#}
+{#                {% else %}#}
+{#                    <div class="login_btn fl">#}
+{#                    <a href="/login/">登录</a>#}
+{#                    <span>|</span>#}
+{#                    <a href="/register/">注册</a>#}
+{#                </div>#}
+{#                {% endif %}#}
+
+{#                第二种：使用ajax请求局部刷新#}
+{#                    <div  class="login_btn fl">#}
+                        {# ajax渲染 #}
+{#                    </div>#}
+
+{#                 第三种#}
+                <div class="login_btn fl" v-if="username">
+                    欢迎您：<em>[[username]]</em>
                     <span>|</span>
-                    <a href="/logout/" class="quit">退出</a>
+{#                    <a href="/logout/" class="quit">退出</a> 反向解析 命名空间#}
+                    <a href="{{ url('users:logout') }}" class="quit">退出</a>
                 </div>
-                {% else %}
-                    <div class="login_btn fl" v-else>
+                <div class="login_btn fl" v-else >
                     <a href="/login/">登录</a>
                     <span>|</span>
                     <a href="/register/">注册</a>
                 </div>
-                {% endif %}
-
                 <div class="user_link fl">
                     <span>|</span>
-                    <a href="/info/">用户中心</a>
+                    <a href="{{ url('users:info') }}">用户中心</a>
                     <span>|</span>
                     <a href="/carts/">我的购物车</a>
                     <span>|</span>
                     <a href="/orders/info/1/">我的订单</a>
                 </div>
             </div>
+        </div>
         </div>
     </div>
 
@@ -86,15 +105,10 @@
 
     <div class="pos_center_con clearfix">
         <ul class="slide">
-
                 <li><a href="javascript:;"><img src="http://52.83.143.113:8888/group1/M00/00/01/CtM3BVrLmc-AJdVSAAEI5Wm7zaw8639396" alt="美图M8s"></a></li>
-
                 <li><a href="javascript:;"><img src="http://52.83.143.113:8888/group1/M00/00/01/CtM3BVrLmiKANEeLAAFfMRWFbY86177278" alt="黑色星期五"></a></li>
-
                 <li><a href="javascript:;"><img src="http://52.83.143.113:8888/group1/M00/00/01/CtM3BVrLmkaAPIMJAAESCG7GAh43642702" alt="厨卫365"></a></li>
-
                 <li><a href="javascript:;"><img src="http://52.83.143.113:8888/group1/M00/00/01/CtM3BVrLmnaADtSKAAGlxZuk7uk4998927" alt="君乐宝买一送一"></a></li>
-
         </ul>
         <div class="prev"></div>
         <div class="next"></div>
@@ -2121,7 +2135,6 @@
                             <h4><a href="javascript:;" title="360记录仪M301">360记录仪M301</a></h4>
                             <div class="price">￥319.00</div>
                         </li>
-
                 </ul>
             </div>
         </div>
@@ -2314,6 +2327,8 @@
         <p>电话：010-****888 京ICP备*******8号</p>
     </div>
 </div>
+<script type="application/javascript" src="{{ static("js/common.js") }}"></script>
 <script type="text/javascript" src="{{ static('js/index.js') }}"></script>
+
 </body>
 </html>

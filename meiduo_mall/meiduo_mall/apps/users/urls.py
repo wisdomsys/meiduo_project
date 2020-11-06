@@ -13,6 +13,17 @@ urlpatterns = [
     url(r'^mobile/(?P<mobile>1[0-9]{10})/count/$', views.MobileCountView.as_view()),
 
     # 用户登录
-    url(r'^login/$', views.LoginView.as_view(), name='login')
+    url(r'^login/$', views.LoginView.as_view(), name='login'),
+
+    # 用户退出登录
+    url(r'logout/$', views.LogoutView.as_view(), name='logout'),
+
+    # 用户中心
+    url(r'info/$', views.UserInfoView.as_view(), name='info'),
+
+    # 添加邮箱
+    url(r'emails/$', views.EmailView.as_view())
+
+    # 验证邮箱
 
 ]

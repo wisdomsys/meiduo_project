@@ -1,93 +1,90 @@
-var vm = new Vue({
+let vm = new Vue({
     el: '#app',
+    // 修改Vue变量的读取语法，避免和django模板语法冲突
+    delimiters: ['[[', ']]'],
     data: {
-        host,
-        user_id: sessionStorage.user_id || localStorage.user_id,
-        token: sessionStorage.token || localStorage.token,
-        username: '',
-        mobile: '',
-        email: '',
-        email_active: false,
+        username: username,
+        mobile: mobile,
+        email: email,
+        email_active: email_active,
         set_email: false,
+        error_email: false,
+        error_email_message: '',
         send_email_btn_disabled: false,
         send_email_tip: '重新发送验证邮件',
-        email_error: false,
-        histories: [] // 用户浏览记录
+        histories: []
     },
-    mounted: function(){
-        // 判断用户的登录状态
-        if (this.user_id && this.token) {
-            axios.get(this.host + '/user/', {
-                    // 向后端传递JWT token的方法
-                    headers: {
-                        'Authorization': 'JWT ' + this.token
-                    },
-                    responseType: 'json',
-                })
-                .then(response => {
-                    // 加载用户数据
-                    this.user_id = response.data.id;
-                    this.username = response.data.username;
-                    this.mobile = response.data.mobile;
-                    this.email = response.data.email;
-                    this.email_active = response.data.email_active;
+    // ES6语法
+    mounted() {
+        // 额外处理用户数据
+        this.email_active = (this.email_active=='True') ? true : false;
+        this.set_email = (this.email=='') ? true : false;
 
-                    // 补充请求浏览历史
-                    axios.get(this.host + '/browse_histories/', {
-                            headers: {
-                                'Authorization': 'JWT ' + this.token
-                            },
-                            responseType: 'json'
-                        })
-                        .then(response => {
-                            this.histories = response.data;
-                            for(var i=0; i<this.histories.length; i++){
-                                this.histories[i].url = '/goods/' + this.histories[i].id + '.html';
-                            }
-                        })
-
-                })
-                .catch(error => {
-                    if (error.response.status==401 || error.response.status==403) {
-                        location.href = '/login.html?next=/user_center_info.html';
-                    }
-                });
-        } else {
-            location.href = '/login.html?next=/user_center_info.html';
-        }
+        // 请求浏览历史记录
+        // this.browse_histories();
     },
     methods: {
-        // 退出
-        logout: function(){
-            sessionStorage.clear();
-            localStorage.clear();
-            location.href = '/login.html';
-        },
-        // 保存email
-        save_email: function(){
-            var re = /^[a-z0-9][\w\.\-]*@[a-z0-9\-]+(\.[a-z]{2,5}){1,2}$/;
-            if(re.test(this.email)) {
-                this.email_error = false;
+        // 检查email格式
+        check_email(){
+            let re = /^[a-z0-9][\w\.\-]*@[a-z0-9\-]+(\.[a-z]{2,5}){1,2}$/;
+            if (re.test(this.email)) {
+                this.error_email = false;
             } else {
-                this.email_error = true;
+                this.error_email_message = '邮箱格式错误';
+                this.error_email = true;
                 return;
             }
-            axios.put(this.host + '/email/',
-                { email: this.email },
-                {
-                    headers: {
-                        'Authorization': 'JWT ' + this.token
-                    },
+        },
+        // 取消保存
+        cancel_email(){
+            this.email = '';
+            this.error_email = false;
+        },
+        // 保存email
+        save_email(){
+            if (this.error_email == false) {
+                let url = '/emails/';
+                axios.put(url, {
+                        email: this.email
+                    }, {
+                        headers: {
+                            'X-CSRFToken':getCookie('csrftoken')
+                        },
+                        responseType: 'json'
+                    })
+                    .then(response => {
+                        if (response.data.code == '0') {
+                            this.set_email = false;
+                            this.send_email_btn_disabled = true;
+                            this.send_email_tip = '已发送验证邮件';
+                        } else if (response.data.code == '4101') {
+                            location.href = '/login/?next=/info/';
+                        } else { // 5000 5001
+                            this.error_email_message = response.data.errmsg;
+                            this.error_email = true;
+                        }
+                    })
+                    .catch(error => {
+                        console.log(error.response);
+                    });
+            }
+        },
+        // 请求浏览历史记录
+        browse_histories(){
+            let url = '/browse_histories/';
+            axios.get(url, {
                     responseType: 'json'
                 })
                 .then(response => {
-                    this.set_email = false;
-                    this.send_email_btn_disabled = true;
-                    this.send_email_tip = '已发送验证邮件'
+                    this.histories = response.data.skus;
+                    for(let i=0; i<this.histories.length; i++){
+                        // this.histories[i].url = '/goods/' + this.histories[i].id + '.html';
+                        this.histories[i].url = '/detail/' + this.histories[i].id;
+                    }
                 })
                 .catch(error => {
-                    alert(error.data);
-                });
+                    console.log(error.response);
+                })
         }
     }
 });

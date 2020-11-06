@@ -1,4 +1,4 @@
-var vm = new Vue({
+let vm = new Vue({
     el: '#app',
     data: {
         // host: host,
@@ -83,11 +83,11 @@ var vm = new Vue({
             }
         },
         // qq登录
-        qq_login: function(){
-            var next = this.get_query_string('next') || '/';
-            axios.get(this.host + '/oauth/qq/authorization/?next=' + next, {
+        qq_login(){
+            let next = this.get_query_string('next') || '/';
+            let url = '/qq/login/?next='+next;
+            axios.get(url, {
                     responseType: 'json',
-                    withCredentials: true
                 })
                 .then(response => {
                     location.href = response.data.login_url;

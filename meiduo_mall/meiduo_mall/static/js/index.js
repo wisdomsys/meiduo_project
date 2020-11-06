@@ -1,12 +1,12 @@
-var vm = new Vue({
+let vm = new Vue({
     el: '#app',
     // 修改Vue变量的读取语法，避免和django模板语法冲突
     delimiters: ['[[', ']]'],
     data: {
         // host,
-        username: sessionStorage.username || localStorage.username,
-        user_id: sessionStorage.user_id || localStorage.user_id,
-        token: sessionStorage.token || localStorage.token,
+        username: getCookie('username'),
+        // user_id: sessionStorage.user_id || localStorage.user_id,
+        // token: sessionStorage.token || localStorage.token,
         cart_total_count: 0, // 购物车总数量
         carts: [], // 购物车数据,
         f1_tab: 1, // 1F 标签页控制

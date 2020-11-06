@@ -3,6 +3,17 @@ import re
 
 from django.contrib.auth.backends import ModelBackend
 from users.models import User
+from itsdangerous import TimedJSONWebSignatureSerializer as Serializer
+from django.conf import settings
+from . import constants
+
+
+def generate_verify_email_url(user):
+    # 商城邮箱激活
+    s = Serializer(settings.SECRET_KEY, constants.VERIFY_EMAIL_TOKEN_EXPIRES)
+    data = {'user_id': user.id, 'email': user.email}
+    token = s.dumps(data)
+    return settings.EMAIL_VERIFY_URL + '?token=' + token.decode()
 
 
 def get_user_by_account(account):
