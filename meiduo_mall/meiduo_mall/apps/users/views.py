@@ -64,7 +64,7 @@ class EmailView(LoginRequiredJSONMixin, View):
         verify_url = generate_verify_email_url(request.user)
         # send_verify_email(email, verify_url) 错误的写法
         send_verify_email.delay(email, verify_url)
-
+# test一下
         # 响应结果
         return http.JsonResponse({'code': '0', 'errmsg': 'ok'})
 
